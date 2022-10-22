@@ -2,6 +2,7 @@ export type Cell = {
 	isMine: boolean;
 	number: number;
 	revealed: boolean;
+	flagged: boolean;
 	x: number;
 	y: number;
 };
@@ -19,7 +20,14 @@ export default function boardGen(
 		let row: Cell[] = [];
 
 		for (let j = 0; j < x; j++) {
-			row.push({ isMine: false, number: 0, revealed: false, x: j, y: i });
+			row.push({
+				isMine: false,
+				number: 0,
+				revealed: false,
+				flagged: false,
+				x: j,
+				y: i,
+			});
 		}
 
 		board.push(row);

@@ -1,13 +1,18 @@
 <script lang="ts">
+	import { clear_loops } from "svelte/internal";
 	import type { Cell } from "./boardGen";
 	import boardGen from "./boardGen";
 
-	let grid: Cell[][] = boardGen(9, 9, 15);
+	const width = 9;
+	const height = 9;
+	const mines = 10;
+
+	let grid: Cell[][] = boardGen(width, height, mines);
 
 	let clickedYet = false;
 	const reveal = (x, y) => {
 		if (!clickedYet) {
-			grid = boardGen(9, 9, 15, [x, y]);
+			grid = boardGen(width, height, mines, [x, y]);
 			clickedYet = true;
 		}
 
@@ -15,16 +20,47 @@
 
 		if (grid[y][x].number !== 0) return;
 
-		/* // iterate over neighbors
-		for (let p = -1; p <= 1; p++) {
-			for (let q = -1; q <= 1; q++) {
-				// dont count the original cell
-				if (p === q && q === 0) continue;
+		/* loop through all revealed zeroes and
+		reveal all adjacent cells until none left */
+		console.log("looping");
+		while (true) {
+			let c = 0;
+			for (let i = 0; i < height; i++) {
+				for (let j = 0; j < width; j++) {
+					if (grid[i][j].number === 0 && grid[i][j].revealed) {
+						for (let p = -1; p <= 1; p++) {
+							for (let q = -1; q <= 1; q++) {
+								// dont count the original cell
+								if (p === 0 && q === 0) continue;
 
-				// out of range / off the board
-				if (x + p < 0 || x + p > y - 1 || y + q < 0 || y + q > x - 1) continue;
+								// out of range / off the board
+								if (
+									i + p < 0 ||
+									i + p > height - 1 ||
+									j + q < 0 ||
+									j + q > width - 1
+								)
+									continue;
+
+								if (
+									!grid[i + p][j + q].flagged &&
+									!grid[i + p][j + q].revealed
+								) {
+									grid[i + p][j + q].revealed = true;
+									c++;
+								}
+							}
+						}
+					}
+				}
 			}
-		} */
+			if (c === 0) break;
+		}
+		console.log("stopped looping");
+	};
+
+	const flag = (x, y) => {
+		grid[y][x].flagged = !grid[y][x].flagged;
 	};
 </script>
 
@@ -46,10 +82,16 @@
 							</p>
 						</td>
 					{:else}
-						<td class="cell">
+						<td class={"cell".concat(cell.flagged ? " flagged" : "")}>
 							<button
 								class="cell-button"
-								on:click={() => reveal(cell.x, cell.y)}
+								on:click={() => {
+									if (!cell.flagged) reveal(cell.x, cell.y);
+								}}
+								on:contextmenu={(e) => {
+									e.preventDefault();
+									flag(cell.x, cell.y);
+								}}
 							/>
 						</td>{/if}
 				{/each}
@@ -80,6 +122,9 @@
 			width: 100%;
 			height: 100%;
 			font: inherit;
+		}
+		&.flagged {
+			background-color: red;
 		}
 		&.revealed {
 			background-color: lightgray;
