@@ -40,7 +40,7 @@ export default function boardGen(
 
 		while (taken) {
 			mineX = Math.floor(Math.random() * x);
-			mineY = Math.floor(Math.random() * x);
+			mineY = Math.floor(Math.random() * y);
 
 			if (
 				!board[mineY][mineX].isMine &&

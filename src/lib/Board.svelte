@@ -1,13 +1,18 @@
 <script lang="ts">
-	import { clear_loops } from "svelte/internal";
 	import type { Cell } from "./boardGen";
 	import boardGen from "./boardGen";
+	import MinesLeft from "./GuiNumber.svelte";
+	import FlagIcon from "../FlagIcon.svelte";
 
-	const width = 9;
-	const height = 9;
-	const mines = 10;
+	const width = 30;
+	const height = 16;
+	const mines = 99;
 
-	let grid: Cell[][] = boardGen(width, height, mines);
+	const lost = false;
+
+	let grid: Cell[][] = boardGen(width, height, 0);
+
+	let flags = 0;
 
 	let clickedYet = false;
 	const reveal = (x, y) => {
@@ -27,7 +32,11 @@
 			let c = 0;
 			for (let i = 0; i < height; i++) {
 				for (let j = 0; j < width; j++) {
-					if (grid[i][j].number === 0 && grid[i][j].revealed) {
+					if (
+						grid[i][j].number === 0 &&
+						grid[i][j].revealed &&
+						!grid[i][j].isMine
+					) {
 						for (let p = -1; p <= 1; p++) {
 							for (let q = -1; q <= 1; q++) {
 								// dont count the original cell
@@ -60,26 +69,38 @@
 	};
 
 	const flag = (x, y) => {
-		grid[y][x].flagged = !grid[y][x].flagged;
+		if (grid[y][x].flagged) {
+			grid[y][x].flagged = false;
+			flags--;
+		} else {
+			grid[y][x].flagged = true;
+			flags++;
+		}
 	};
 </script>
 
 <article>
-	<table>
+	<h1><MinesLeft count={mines - flags} /></h1>
+	<table on:contextmenu={(e) => e.preventDefault()}>
 		{#each grid as row}
 			<tr>
 				{#each row as cell}
 					{#if cell.revealed}
-						<td class="cell revealed" data-value={cell.number}>
-							<p class="cell-number">
-								{#if cell.isMine}
-									!
-								{:else if cell.number !== 0}
+						<td
+							class={"cell revealed".concat(cell.isMine ? " mine" : "")}
+							data-value={cell.number}
+						>
+							{#if cell.isMine}
+								<div
+									style="display:flex;justify-content:center;align-content:center;"
+								>
+									<img src="/mine.png" alt="mine" width="25" height="25" />
+								</div>
+							{:else if cell.number !== 0}
+								<p class="cell-number">
 									{cell.number}
-								{:else}
-									{""}
-								{/if}
-							</p>
+								</p>
+							{/if}
 						</td>
 					{:else}
 						<td class={"cell".concat(cell.flagged ? " flagged" : "")}>
@@ -92,7 +113,16 @@
 									e.preventDefault();
 									flag(cell.x, cell.y);
 								}}
-							/>
+								><div class="cell-inner">
+									<img
+										src="/flag.png"
+										alt="flag"
+										width="25"
+										height="25"
+										style={`display:${cell.flagged ? "block" : "none"};`}
+									/>
+								</div></button
+							>
 						</td>{/if}
 				{/each}
 			</tr>
@@ -102,36 +132,55 @@
 
 <style lang="scss">
 	@font-face {
-		font-family: "minesweeper"; /*a name to be used later*/
-		src: url("/mine-sweeper.ttf"); /*URL to font*/
+		font-family: "minesweeper";
+		src: url("/mine-sweeper.ttf");
 	}
 	table {
-		border-collapse: collapse;
+		border-spacing: 0;
+		table-layout: fixed;
 	}
 	.cell {
+		overflow: hidden;
 		font-family: minesweeper;
-		width: 30px;
-		height: 30px;
-		border: 2px black solid;
-		background-color: gray;
-		& > .cell-button {
+
+		background-color: #bdbdbd;
+
+		.cell-inner {
+			box-sizing: content-box;
+
+			width: 25px;
+			height: 25px;
+
+			border-top: 0.4em solid lightgrey;
+			border-bottom: 0.4em solid grey;
+			border-left: 0.4em solid lightgrey;
+			border-right: 0.4em solid grey;
+		}
+		.cell-button {
 			color: inherit;
 			border: none;
 			background: none;
 			display: block;
-			width: 100%;
-			height: 100%;
+
 			font: inherit;
+			overflow: hidden;
 		}
-		&.flagged {
-			background-color: red;
-		}
+
 		&.revealed {
-			background-color: lightgray;
+			border: none;
+			box-shadow: inset 1px 1px 0 #7b7b7b;
+			&.mine {
+				background-color: red;
+			}
 			& > .cell-number {
 				color: inherit;
 				margin: 0;
 				text-align: center;
+
+				user-select: none;
+				-moz-user-select: none;
+				-webkit-user-select: none;
+				-ms-user-select: none;
 			}
 			&[data-value="1"] {
 				color: blue;
