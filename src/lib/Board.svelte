@@ -2,13 +2,12 @@
 	import type { Cell } from "./boardGen";
 	import boardGen from "./boardGen";
 	import MinesLeft from "./GuiNumber.svelte";
-	import FlagIcon from "../FlagIcon.svelte";
 
 	const width = 30;
 	const height = 16;
-	const mines = 99;
+	const mines = 5;
 
-	const lost = false;
+	let lost = false;
 
 	let grid: Cell[][] = boardGen(width, height, 0);
 
@@ -23,7 +22,54 @@
 
 		grid[y][x].revealed = true;
 
-		if (grid[y][x].number !== 0) return;
+		if (grid[y][x].isMine) {
+			lost = true;
+		}
+
+		if (grid[y][x].number !== 0) {
+			let numFlags = 0;
+
+			for (let p = -1; p <= 1; p++) {
+				for (let q = -1; q <= 1; q++) {
+					// dont count the original cell
+					if (p === 0 && q === 0) continue;
+
+					// out of range / off the board
+					if (y + p < 0 || y + p > height - 1 || x + q < 0 || x + q > width - 1)
+						continue;
+
+					if (grid[y + p][x + q].flagged) {
+						numFlags++;
+					}
+				}
+			}
+
+			if (numFlags === grid[y][x].number) {
+				for (let p = -1; p <= 1; p++) {
+					for (let q = -1; q <= 1; q++) {
+						// dont count the original cell
+						if (p === 0 && q === 0) continue;
+
+						// out of range / off the board
+						if (
+							y + p < 0 ||
+							y + p > height - 1 ||
+							x + q < 0 ||
+							x + q > width - 1
+						)
+							continue;
+
+						if (!grid[y + p][x + q].flagged && !grid[y + p][x + q].revealed) {
+							grid[y + p][x + q].revealed = true;
+						}
+
+						if (grid[y + p][x + q].isMine) {
+							lost = true;
+						}
+					}
+				}
+			}
+		}
 
 		/* loop through all revealed zeroes and
 		reveal all adjacent cells until none left */
@@ -57,6 +103,10 @@
 								) {
 									grid[i + p][j + q].revealed = true;
 									c++;
+
+									if (grid[i + p][j + q].isMine) {
+										lost = true;
+									}
 								}
 							}
 						}
@@ -66,6 +116,14 @@
 			if (c === 0) break;
 		}
 		console.log("stopped looping");
+
+		if (lost) {
+			console.log("you lose");
+			setTimeout(() => {
+				alert("you lose");
+				location.reload();
+			}, 10);
+		}
 	};
 
 	const flag = (x, y) => {
@@ -97,9 +155,20 @@
 									<img src="/mine.png" alt="mine" width="25" height="25" />
 								</div>
 							{:else if cell.number !== 0}
-								<p class="cell-number">
-									{cell.number}
-								</p>
+								<button
+									class="cell-button"
+									on:click={() => {
+										if (!cell.flagged) reveal(cell.x, cell.y);
+									}}
+									on:contextmenu={(e) => {
+										e.preventDefault();
+										flag(cell.x, cell.y);
+									}}
+								>
+									<p class="cell-number">
+										{cell.number}
+									</p></button
+								>
 							{/if}
 						</td>
 					{:else}
@@ -140,6 +209,7 @@
 		table-layout: fixed;
 	}
 	.cell {
+		font-size: large;
 		overflow: hidden;
 		font-family: minesweeper;
 
@@ -161,6 +231,9 @@
 			border: none;
 			background: none;
 			display: block;
+
+			width: 40px;
+			height: 40px;
 
 			font: inherit;
 			overflow: hidden;
