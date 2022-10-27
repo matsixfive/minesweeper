@@ -5,7 +5,7 @@
 
 	const width = 30;
 	const height = 16;
-	const mines = 5;
+	const mines = 20;
 
 	let lost = false;
 
@@ -15,36 +15,21 @@
 
 	let clickedYet = false;
 	const reveal = (x, y) => {
-		if (!clickedYet) {
-			grid = boardGen(width, height, mines, [x, y]);
-			clickedYet = true;
-		}
-
-		grid[y][x].revealed = true;
-
-		if (grid[y][x].isMine) {
-			lost = true;
-		}
-
-		if (grid[y][x].number !== 0) {
-			let numFlags = 0;
-
-			for (let p = -1; p <= 1; p++) {
-				for (let q = -1; q <= 1; q++) {
-					// dont count the original cell
-					if (p === 0 && q === 0) continue;
-
-					// out of range / off the board
-					if (y + p < 0 || y + p > height - 1 || x + q < 0 || x + q > width - 1)
-						continue;
-
-					if (grid[y + p][x + q].flagged) {
-						numFlags++;
-					}
-				}
+		if (!lost) {
+			if (!clickedYet) {
+				grid = boardGen(width, height, mines, [x, y]);
+				clickedYet = true;
 			}
 
-			if (numFlags === grid[y][x].number) {
+			grid[y][x].revealed = true;
+
+			if (grid[y][x].isMine) {
+				lost = true;
+			}
+
+			if (grid[y][x].number !== 0) {
+				let numFlags = 0;
+
 				for (let p = -1; p <= 1; p++) {
 					for (let q = -1; q <= 1; q++) {
 						// dont count the original cell
@@ -59,70 +44,89 @@
 						)
 							continue;
 
-						if (!grid[y + p][x + q].flagged && !grid[y + p][x + q].revealed) {
-							grid[y + p][x + q].revealed = true;
-						}
-
-						if (grid[y + p][x + q].isMine) {
-							lost = true;
+						if (grid[y + p][x + q].flagged) {
+							numFlags++;
 						}
 					}
 				}
-			}
-		}
 
-		/* loop through all revealed zeroes and
-		reveal all adjacent cells until none left */
-		console.log("looping");
-		while (true) {
-			let c = 0;
-			for (let i = 0; i < height; i++) {
-				for (let j = 0; j < width; j++) {
-					if (
-						grid[i][j].number === 0 &&
-						grid[i][j].revealed &&
-						!grid[i][j].isMine
-					) {
-						for (let p = -1; p <= 1; p++) {
-							for (let q = -1; q <= 1; q++) {
-								// dont count the original cell
-								if (p === 0 && q === 0) continue;
+				if (numFlags === grid[y][x].number) {
+					for (let p = -1; p <= 1; p++) {
+						for (let q = -1; q <= 1; q++) {
+							// dont count the original cell
+							if (p === 0 && q === 0) continue;
 
-								// out of range / off the board
-								if (
-									i + p < 0 ||
-									i + p > height - 1 ||
-									j + q < 0 ||
-									j + q > width - 1
-								)
-									continue;
+							// out of range / off the board
+							if (
+								y + p < 0 ||
+								y + p > height - 1 ||
+								x + q < 0 ||
+								x + q > width - 1
+							)
+								continue;
 
-								if (
-									!grid[i + p][j + q].flagged &&
-									!grid[i + p][j + q].revealed
-								) {
-									grid[i + p][j + q].revealed = true;
-									c++;
+							if (!grid[y + p][x + q].flagged && !grid[y + p][x + q].revealed) {
+								grid[y + p][x + q].revealed = true;
 
-									if (grid[i + p][j + q].isMine) {
-										lost = true;
-									}
+								if (grid[y + p][x + q].isMine) {
+									lost = true;
 								}
 							}
 						}
 					}
 				}
 			}
-			if (c === 0) break;
-		}
-		console.log("stopped looping");
 
-		if (lost) {
-			console.log("you lose");
-			setTimeout(() => {
+			/* loop through all revealed zeroes and
+		reveal all adjacent cells until none left */
+			console.log("looping");
+			while (true) {
+				let c = 0;
+				for (let i = 0; i < height; i++) {
+					for (let j = 0; j < width; j++) {
+						if (
+							grid[i][j].number === 0 &&
+							grid[i][j].revealed &&
+							!grid[i][j].isMine
+						) {
+							for (let p = -1; p <= 1; p++) {
+								for (let q = -1; q <= 1; q++) {
+									// dont count the original cell
+									if (p === 0 && q === 0) continue;
+
+									// out of range / off the board
+									if (
+										i + p < 0 ||
+										i + p > height - 1 ||
+										j + q < 0 ||
+										j + q > width - 1
+									)
+										continue;
+
+									if (
+										!grid[i + p][j + q].flagged &&
+										!grid[i + p][j + q].revealed
+									) {
+										grid[i + p][j + q].revealed = true;
+										c++;
+
+										if (grid[i + p][j + q].isMine) {
+											lost = true;
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+				if (c === 0) break;
+			}
+			console.log("stopped looping");
+
+			if (lost) {
+				console.log("you lose");
 				alert("you lose");
-				location.reload();
-			}, 10);
+			}
 		}
 	};
 
@@ -134,6 +138,8 @@
 			grid[y][x].flagged = true;
 			flags++;
 		}
+
+		if (flags === 0) alert("you win!")
 	};
 </script>
 
