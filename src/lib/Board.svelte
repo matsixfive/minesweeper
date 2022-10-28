@@ -221,7 +221,7 @@
 		<h1>
 			<MinesLeft number={mines - flags} />
 		</h1>
-		<button on:click={() => restart()}>{won ? "😎" : lost ? "🙁" : "🙂"}</button
+		<button class="smiley" on:click={() => restart()}>{won ? "😎" : lost ? "🙁" : "🙂"}</button
 		>
 		<h1><MinesLeft number={timer} /></h1>
 	</header>
@@ -298,14 +298,24 @@
 	header {
 		display: flex;
 		justify-content: space-between;
-	}
-	.empty-box {
-		width: 40px;
-		height: 40px;
+		align-items: center;
+		.smiley {
+			font-size:2rem;
+			background-color: lightgrey;
+			// border:2px solid grey;
+			border-radius:0;
+
+			border: 0.5rem solid;
+			border-color: lightgrey grey grey lightgrey;
+		}
 	}
 	table {
 		border-spacing: 0;
 		table-layout: fixed;
+	}
+	.empty-box {
+		width: 40px;
+		height: 40px;
 	}
 	.cell {
 		font-size: large;
@@ -313,6 +323,10 @@
 		font-family: minesweeper;
 
 		background-color: #bdbdbd;
+
+		&:active {
+			box-shadow: inset 1px 1px 0 #7b7b7b;	
+		}
 
 		.cell-inner {
 			box-sizing: content-box;
@@ -322,6 +336,10 @@
 
 			border: 0.5em solid;
 			border-color: lightgrey grey grey lightgrey;
+
+			&:active {
+				border-color: transparent;
+			}
 		}
 		.cell-button {
 			color: inherit;
