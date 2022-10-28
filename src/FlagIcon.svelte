@@ -1,9 +1,23 @@
-<!-- <?xml version="1.0" encoding="utf-8"?> -->
 <script>
-	export let display;
+  export let display;
 </script>
 
 <svg
+  style={`display:${display ? "block" : "none"};`}
+  xmlns="http://www.w3.org/2000/svg"
+  id="Layer_1"
+  viewBox="0 0 15.73066 20"
+	width="15.73066px"
+	height="20px">
+  <path
+    d="M15.73066,18.50013v1.49987H0v-1.49987c0-.82693,.67082-1.4967,1.49776-1.4967h1.13914v-.43878c0-.70774,.57484-1.28259,1.28364-1.28259h3.88256V6.46957h1.72453V15.28207h2.2825c.70879,0,1.28364,.57484,1.28364,1.28259v.43878h1.13914c.82693,0,1.49776,.66977,1.49776,1.4967Z"
+    fill="#231f20" />
+  <polygon
+    points=".76743 5.05775 9.52772 10.11551 9.52772 0 .76743 5.05775"
+    fill="#ed2024" />
+</svg>
+
+<!-- <svg
 	style={`display:${display ? "block" : "none"};`}
 	version="1.1"
 	x="0px"
@@ -41,4 +55,4 @@
 			/>
 		</g>
 	</g>
-</svg>
+</svg> -->
