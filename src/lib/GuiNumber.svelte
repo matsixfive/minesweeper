@@ -1,8 +1,14 @@
 <script lang="ts">
-	export let count = 0;
+	export let number: number;
 </script>
 
-<div>{count.toString().padStart(3, "0")}</div>
+<table>
+	<tr>
+		{#each number.toString().padStart(3, "0").split("") as char}
+			<td>{char}</td>
+		{/each}
+	</tr>
+</table>
 
 <style lang="scss">
 	@font-face {
@@ -10,8 +16,16 @@
 		src: url("/seven-segment.ttf");
 	}
 
-	div {
+	table {
+		// width:100px;
 		font-family: "sevensegment";
 		color: red;
+		table-layout: fixed;
+		column-gap: 0;
+	}
+	td {
+		width: 1ch;
+		overflow: hidden;
+		text-align: center;
 	}
 </style>

@@ -1,31 +1,120 @@
 <script lang="ts">
+	import FlagIcon from "../FlagIcon.svelte";
 	import type { Cell } from "./boardGen";
 	import boardGen from "./boardGen";
 	import MinesLeft from "./GuiNumber.svelte";
+
+	export let restart: () => void;
 
 	const width = 30;
 	const height = 16;
 	const mines = 20;
 
-	let lost = false;
+	let boardEl;
 
 	let grid: Cell[][] = boardGen(width, height, 0);
+	let lost = false;
+	let won = false;
 
 	let flags = 0;
+	let nonFlags = width * height;
+
+	let timer = 0;
+	let timerInterval: NodeJS.Timer;
+	const startTimer = () => {
+		timerInterval = setInterval(() => timer++, 1000);
+	};
+
+	const stopTimer = () => {
+		clearInterval(timerInterval);
+	};
+
+	const win = () => {
+		won = true;
+		// alert("win!");
+		stopTimer();
+	};
+
+	const lose = () => {
+		lost = true;
+		// alert("you lose");
+		stopTimer();
+	};
+
+	const checkForWin = () => {
+		if (!won) {
+			if (!lost) {
+				if (mines - flags === nonFlags) {
+					if (nonFlags !== 0) {
+						console.log(":)");
+						revealRemaining();
+					} else {
+						win();
+					}
+				}
+			}
+		}
+	};
+
+	const revealRemaining = () => {
+		let flagAmt = 0;
+		for (let j = 0; j < height; j++) {
+			for (let i = 0; i < width; i++) {
+				const { flagged, revealed } = grid[j][i];
+				if (!flagged && !revealed) {
+					flag(i, j);
+					flagAmt++;
+				}
+			}
+		}
+		if (flagAmt === 0) {
+			win();
+		}
+		// checkForWin()
+	};
+
+	const reveal = (x: number, y: number) => {
+		if (!grid[y][x].flagged && !grid[y][x].revealed) {
+			grid[y][x].revealed = true;
+			nonFlags--;
+			if (grid[y][x].isMine) {
+				lose();
+			}
+			checkForWin();
+		}
+	};
+
+	const flag = (x: number, y: number) => {
+		if (!(won || lost)) {
+			if (!grid[y][x].flagged) {
+				grid[y][x].flagged = true;
+				flags++;
+				nonFlags--;
+			}
+			checkForWin();
+		}
+	};
+
+	const unflag = (x: number, y: number) => {
+		if (!(won || lost)) {
+		if (grid[y][x].flagged) {
+			grid[y][x].flagged = false;
+			flags--;
+			nonFlags++;
+		}
+		checkForWin();}
+	};
 
 	let clickedYet = false;
-	const reveal = (x, y) => {
+	const handleCellClick = (x, y) => {
 		if (!lost) {
 			if (!clickedYet) {
 				grid = boardGen(width, height, mines, [x, y]);
 				clickedYet = true;
+				startTimer();
 			}
 
-			grid[y][x].revealed = true;
-
-			if (grid[y][x].isMine) {
-				lost = true;
-			}
+			reveal(x, y);
 
 			if (grid[y][x].number !== 0) {
 				let numFlags = 0;
@@ -66,10 +155,10 @@
 								continue;
 
 							if (!grid[y + p][x + q].flagged && !grid[y + p][x + q].revealed) {
-								grid[y + p][x + q].revealed = true;
+								reveal(x + q, y + p);
 
 								if (grid[y + p][x + q].isMine) {
-									lost = true;
+									lose();
 								}
 							}
 						}
@@ -82,36 +171,36 @@
 			console.log("looping");
 			while (true) {
 				let c = 0;
-				for (let i = 0; i < height; i++) {
-					for (let j = 0; j < width; j++) {
+				for (let j = 0; j < height; j++) {
+					for (let i = 0; i < width; i++) {
 						if (
-							grid[i][j].number === 0 &&
-							grid[i][j].revealed &&
-							!grid[i][j].isMine
+							grid[j][i].number === 0 &&
+							grid[j][i].revealed &&
+							!grid[j][i].isMine
 						) {
-							for (let p = -1; p <= 1; p++) {
-								for (let q = -1; q <= 1; q++) {
+							for (let q = -1; q <= 1; q++) {
+								for (let p = -1; p <= 1; p++) {
 									// dont count the original cell
-									if (p === 0 && q === 0) continue;
+									if (q === 0 && p === 0) continue;
 
 									// out of range / off the board
 									if (
-										i + p < 0 ||
-										i + p > height - 1 ||
 										j + q < 0 ||
-										j + q > width - 1
+										j + q > height - 1 ||
+										i + p < 0 ||
+										i + p > width - 1
 									)
 										continue;
 
 									if (
-										!grid[i + p][j + q].flagged &&
-										!grid[i + p][j + q].revealed
+										!grid[j + q][i + p].flagged &&
+										!grid[j + q][i + p].revealed
 									) {
-										grid[i + p][j + q].revealed = true;
+										reveal(i + p, j + q);
 										c++;
 
-										if (grid[i + p][j + q].isMine) {
-											lost = true;
+										if (grid[j + q][i + p].isMine) {
+											lose();
 										}
 									}
 								}
@@ -122,30 +211,23 @@
 				if (c === 0) break;
 			}
 			console.log("stopped looping");
-
-			if (lost) {
-				console.log("you lose");
-				alert("you lose");
-			}
+			checkForWin();
 		}
-	};
-
-	const flag = (x, y) => {
-		if (grid[y][x].flagged) {
-			grid[y][x].flagged = false;
-			flags--;
-		} else {
-			grid[y][x].flagged = true;
-			flags++;
-		}
-
-		if (flags === 0) alert("you win!")
 	};
 </script>
 
-<article>
-	<h1><MinesLeft count={mines - flags} /></h1>
-	<table on:contextmenu={(e) => e.preventDefault()}>
+<section style={`width:${width * 40}px`}>
+	<header>
+		<h1>
+			<MinesLeft number={mines - flags} />
+		</h1>
+		<button on:click={() => restart()}>{won ? "😎" : lost ? "🙁" : "🙂"}</button
+		>
+		<h1><MinesLeft number={timer} /></h1>
+	</header>
+	<!-- <h1><MinesLeft>{flags}</MinesLeft></h1> -->
+	<!-- <h1><MinesLeft>{nonFlags}</MinesLeft></h1> -->
+	<table on:contextmenu={(e) => e.preventDefault()} bind:this={boardEl}>
 		{#each grid as row}
 			<tr>
 				{#each row as cell}
@@ -164,17 +246,15 @@
 								<button
 									class="cell-button"
 									on:click={() => {
-										if (!cell.flagged) reveal(cell.x, cell.y);
-									}}
-									on:contextmenu={(e) => {
-										e.preventDefault();
-										flag(cell.x, cell.y);
+										if (!cell.flagged) handleCellClick(cell.x, cell.y);
 									}}
 								>
 									<p class="cell-number">
 										{cell.number}
 									</p></button
 								>
+							{:else}
+								<div class="empty-box" />
 							{/if}
 						</td>
 					{:else}
@@ -182,20 +262,25 @@
 							<button
 								class="cell-button"
 								on:click={() => {
-									if (!cell.flagged) reveal(cell.x, cell.y);
+									if (!cell.flagged) handleCellClick(cell.x, cell.y);
 								}}
 								on:contextmenu={(e) => {
 									e.preventDefault();
-									flag(cell.x, cell.y);
+									if (grid[cell.y][cell.x].flagged) {
+										unflag(cell.x, cell.y);
+									} else {
+										flag(cell.x, cell.y);
+									}
 								}}
 								><div class="cell-inner">
-									<img
+									<!-- <img
 										src="/flag.png"
 										alt="flag"
 										width="25"
 										height="25"
 										style={`display:${cell.flagged ? "block" : "none"};`}
-									/>
+									/> -->
+									<FlagIcon display={cell.flagged} />
 								</div></button
 							>
 						</td>{/if}
@@ -203,12 +288,20 @@
 			</tr>
 		{/each}
 	</table>
-</article>
+</section>
 
 <style lang="scss">
 	@font-face {
 		font-family: "minesweeper";
 		src: url("/mine-sweeper.ttf");
+	}
+	header {
+		display: flex;
+		justify-content: space-between;
+	}
+	.empty-box {
+		width: 40px;
+		height: 40px;
 	}
 	table {
 		border-spacing: 0;
@@ -227,10 +320,8 @@
 			width: 25px;
 			height: 25px;
 
-			border-top: 0.4em solid lightgrey;
-			border-bottom: 0.4em solid grey;
-			border-left: 0.4em solid lightgrey;
-			border-right: 0.4em solid grey;
+			border: 0.5em solid;
+			border-color: lightgrey grey grey lightgrey;
 		}
 		.cell-button {
 			color: inherit;
@@ -251,7 +342,7 @@
 			&.mine {
 				background-color: red;
 			}
-			& > .cell-number {
+			/* & > .cell-number {
 				color: inherit;
 				margin: 0;
 				text-align: center;
@@ -260,7 +351,7 @@
 				-moz-user-select: none;
 				-webkit-user-select: none;
 				-ms-user-select: none;
-			}
+			} */
 			&[data-value="1"] {
 				color: blue;
 			}

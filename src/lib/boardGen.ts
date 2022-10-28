@@ -5,6 +5,7 @@ export type Cell = {
 	flagged: boolean;
 	x: number;
 	y: number;
+	flag: (flagState?: boolean) => void;
 };
 
 export default function boardGen(
@@ -20,14 +21,31 @@ export default function boardGen(
 		let row: Cell[] = [];
 
 		for (let j = 0; j < x; j++) {
-			row.push({
+			const defaultCell = {
 				isMine: false,
 				number: 0,
 				revealed: false,
 				flagged: false,
 				x: j,
 				y: i,
-			});
+				flag: (/* flagState? */) => {
+					console.log(this);
+					// if (typeof flagState === "boolean") {
+					// 	this.flagged = flagState;
+					// }
+					//  else
+					if (this.flagged) {
+						this.flagged = false;
+						/* flags--;
+						nonFlags++; */
+					} else {
+						this.flagged = true;
+						/* flags++;
+						nonFlags--; */
+					}
+				},
+			};
+			row.push(defaultCell);
 		}
 
 		board.push(row);
