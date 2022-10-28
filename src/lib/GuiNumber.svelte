@@ -19,6 +19,7 @@
 	table {
 		// width:100px;
 		font-family: "sevensegment";
+		font-size: 2em;
 		color: red;
 		table-layout: fixed;
 		column-gap: 0;
