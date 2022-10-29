@@ -110,11 +110,22 @@
   const handleCellClick = (x, y) => {
     if (!lost) {
       if (!clickedYet) {
-        grid = boardGen(width, height, mines, [x, y]);
         clickedYet = true;
+
+        // regenerate board on first click (prevents insta loss)
+        grid = boardGen(width, height, mines, [x, y]);
+
+        // start timer on first click
         startTimer();
       }
 
+      // do nothing if cell is flagged
+      if (grid[y][x].flagged) {
+        console.log("message");
+        return;
+      }
+
+      // reveal
       reveal(x, y);
 
       if (grid[y][x].number !== 0) {
@@ -215,6 +226,8 @@
       checkForWin();
     }
   };
+
+  let mouseDown = false;
 </script>
 
 <!-- pre-load font -->
@@ -227,21 +240,35 @@
   <link rel="preload" href="/mine.png" as="image" crossorigin="anonymous" />
 </svelte:head>
 
+<svelte:body
+  on:mousedown={e => {
+    if (e.button === 0) mouseDown = true;
+  }}
+  on:mouseup={() => (mouseDown = false)} />
+
 <section class="container">
-  <div style={`width:${width * 2}em`}>
+  <div>
     <header class="header">
       <h1>
         <MinesLeft number={mines - flags} />
       </h1>
-      <button class="smiley" on:click={() => restart()}
+      <button class="smiley" on:mouseup={() => restart()}
         >{won ? "😎" : lost ? "🙁" : "🙂"}</button>
       <h1><MinesLeft number={timer} /></h1>
     </header>
-    <!-- <h1><MinesLeft>{flags}</MinesLeft></h1> -->
-    <!-- <h1><MinesLeft>{nonFlags}</MinesLeft></h1> -->
-    <table on:contextmenu={e => e.preventDefault()} bind:this={boardEl}>
+
+    <!-- 
+      mousedown: 
+     -->
+    <table
+      class:mouseDown
+      on:mousedown={e => e.preventDefault()}
+      on:contextmenu={e => e.preventDefault()}
+      bind:this={boardEl}>
+      <!-- loop through rows of grid -->
       {#each grid as row}
         <tr>
+          <!-- loop through cells in each row -->
           {#each row as cell}
             {#if cell.revealed}
               <td
@@ -255,8 +282,10 @@
                 {:else if cell.number !== 0}
                   <button
                     class="cell-button"
-                    on:click={() => {
-                      if (!cell.flagged) handleCellClick(cell.x, cell.y);
+                    on:mouseup={e => {
+                      if (e.button === 0) {
+                        if (!cell.flagged) handleCellClick(cell.x, cell.y);
+                      }
                     }}>
                     <p class="cell-number">
                       {cell.number}
@@ -273,25 +302,24 @@
               <td class={"cell".concat(cell.flagged ? " flagged" : "")}>
                 <button
                   class="cell-button"
-                  on:click={() => {
-                    if (!cell.flagged) handleCellClick(cell.x, cell.y);
-                  }}
-                  on:contextmenu={e => {
+                  on:mouseup={e => {
                     e.preventDefault();
-                    if (grid[cell.y][cell.x].flagged) {
-                      unflag(cell.x, cell.y);
-                    } else {
-                      flag(cell.x, cell.y);
+
+                    // left click
+                    if (e.button === 0) {
+                      if (!cell.flagged) handleCellClick(cell.x, cell.y);
+                    }
+                    // right click
+                    else if (e.button === 2) {
+                      // flag / unflag
+                      if (grid[cell.y][cell.x].flagged) {
+                        unflag(cell.x, cell.y);
+                      } else {
+                        flag(cell.x, cell.y);
+                      }
                     }
                   }}
                   ><div class="cell-inner">
-                    <!-- <img
-										src="/flag.png"
-										alt="flag"
-										width="25"
-										height="25"
-										style={`display:${cell.flagged ? "block" : "none"};`}
-									/> -->
                     <div class="flag-container">
                       <FlagIcon display={cell.flagged} />
                     </div>
@@ -314,7 +342,7 @@
     justify-content: space-between;
     align-items: center;
     .smiley {
-      font-size: 2rem;
+      font-size: 1.75rem;
       background-color: lightgrey;
       // border:2px solid grey;
       border-radius: 0;
@@ -335,6 +363,13 @@
     border-spacing: 0;
     table-layout: fixed;
     box-shadow: outset 0 0.1rem 0.1rem 0 #7b7b7b;
+
+    &.mouseDown .cell:hover {
+      box-shadow: inset 0.1rem 0.1rem 0 #7b7b7b;
+      .cell-inner {
+        border-color: transparent;
+      }
+    }
   }
   .empty-box {
     width: 2rem;
@@ -347,12 +382,12 @@
 
     background-color: #bdbdbd;
 
-    &:not(.flagged):active {
-      box-shadow: inset 0.1rem 0.1rem 0 #7b7b7b;
-      .cell-inner {
-        border-color: transparent;
-      }
-    }
+    // &:not(.flagged):active {
+    //   box-shadow: inset 0.1rem 0.1rem 0 #7b7b7b;
+    //   .cell-inner {
+    //     border-color: transparent;
+    //   }
+    // }
 
     .cell-inner {
       box-sizing: content-box;
@@ -398,16 +433,12 @@
       &.mine {
         background-color: red;
       }
-      /* & > .cell-number {
-				color: inherit;
-				margin: 0;
-				text-align: center;
-
-				user-select: none;
-				-moz-user-select: none;
-				-webkit-user-select: none;
-				-ms-user-select: none;
-			} */
+      // -webkit-touch-callout: none; /* iOS Safari */
+      // -webkit-user-select: none; /* Safari */
+      // -khtml-user-select: none; /* Konqueror HTML */
+      // -moz-user-select: none; /* Old versions of Firefox */
+      // -ms-user-select: none; /* Internet Explorer/Edge */
+      // user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
       &[data-value="0"] {
         font-size: 0;
       }
