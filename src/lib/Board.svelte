@@ -8,7 +8,7 @@
 
   const width = 56;
   const height = 24;
-  const mines = 75;
+  const mines = 160;
 
   let boardEl;
 
