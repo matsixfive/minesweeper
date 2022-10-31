@@ -6,9 +6,9 @@
 
 	export let restart: () => void;
 
-	const width = 56;
-	const height = 24;
-	const mines = 160;
+	const width = 30;
+	const height = 16;
+	const mines = 20;
 
 	let boardEl;
 
