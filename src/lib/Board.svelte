@@ -6,9 +6,9 @@
 
 	export let restart: () => void;
 
-	export let width = 30;
-	export let height = 16;
-	export let mines = 20;
+	export let width = 9;
+	export let height = 9;
+	export let mines = 10;
 
 	let boardEl;
 
@@ -239,6 +239,9 @@
 		crossorigin="anonymous"
 	/>
 	<link rel="preload" href="/mine.png" as="image" crossorigin="anonymous" />
+	{#if lost}
+		<link rel="icon" type="image/png" href="/favicon-mine.ico" />
+	{/if}
 </svelte:head>
 
 <svelte:body
@@ -277,14 +280,12 @@
 					{#each row as cell}
 						{#if cell.revealed}
 							<td
-								class={"cell revealed".concat(cell.isMine ? " mine" : "")}
-								data-value={cell.number}
+								class={`cell revealed${cell.isMine ? " mine" : ""}`}
+								data-number={cell.number}
 							>
 								{#if cell.isMine}
-									<div
-										style="display:flex;justify-content:center;align-content:center;"
-									>
-										<img src="/mine.png" alt="mine" width="25" height="25" />
+									<div class="mine-container">
+										<img src="/mine.png" alt="mine" width="12" height="12" />
 									</div>
 								{:else if cell.number !== 0}
 									<button
@@ -302,7 +303,7 @@
 								{:else}
 									<!-- <div class="empty-box" /> -->
 									<div class="cell-button">
-										<p class="cell-number zero">{cell.number}</p>
+										<p class="cell-number">{cell.number}</p>
 									</div>
 								{/if}
 							</td>
@@ -327,10 +328,12 @@
 											}
 										}
 									}}
-									><div class="cell-inner">
+									><div class="cell-inner">{#if cell.flagged}
+										
 										<div class="flag-container">
-											<FlagIcon display={cell.flagged} />
+											<FlagIcon class="cell-inner" />
 										</div>
+									{/if}
 									</div></button
 								>
 							</td>{/if}
@@ -346,25 +349,34 @@
 		font-family: "minesweeper";
 		src: url("/mine-sweeper.ttf");
 	}
+
+	@mixin border {
+		$border-tl: #ffffff;
+		$border-br: #7b7b7b;
+
+		border: $border-size solid;
+		border-color: $border-tl $border-br $border-br $border-tl;
+	}
+
+	$cell-size: 20px;
+	$border-size: calc($cell-size * 0.15);
+
 	.header {
 		display: flex;
 		justify-content: space-between;
 		align-items: center;
 		.smiley {
-			font-size: 1.75rem;
+			font-size: $cell-size;
 			background-color: lightgrey;
-			// border:2px solid grey;
-			border-radius: 0;
+			border-radius: calc( $cell-size / 10);
 
-			border: 0.4rem solid;
-			// width: 1.2rem;
-			// height: 1.2rem;
-			border-color: lightgrey grey grey lightgrey;
+			width: calc($cell-size * 1.5);
+			height: calc($cell-size * 1.5);
+
+			@include border;
 
 			&:active {
-				border-color: grey lightgrey lightgrey grey;
-
-				background-color: grey;
+				border: none;
 			}
 		}
 	}
@@ -372,35 +384,31 @@
 		border-spacing: 0;
 		table-layout: fixed;
 
-		&.mouseDown.playing .cell:hover {
-			box-shadow: inset 0.1rem 0.1rem 0 #7b7b7b;
+		&.mouseDown.playing .cell:hover:not(.flagged) {
+			box-shadow: inset calc($cell-size / 20) calc($cell-size / 20) 0 #7b7b7b;
 			.cell-inner {
 				border-color: transparent;
 			}
 		}
-	}
-	.empty-box {
-		width: 2rem;
-		height: 2rem;
-	}
-	.cell {
-		font-size: large;
-		overflow: hidden;
-		font-family: "minesweeper";
 
-		background-color: #bdbdbd;
+		.cell {
+			font-size: calc($cell-size * 0.666);
+			overflow: hidden;
+			font-family: "minesweeper";
 
-		.cell-inner {
-			box-sizing: content-box;
+			background-color: #bdbdbd;
 
-			position: relative;
+			&.mine {
+				background-color: red;
+				position: relative;
+			}
 
-			border: 0.4rem solid;
-			width: 1.2rem;
-			height: 1.2rem;
-			border-color: lightgrey grey grey lightgrey;
+			.empty-box {
+				width: $cell-size;
+				height: $cell-size;
+			}
 
-			.flag-container {
+			.mine-container {
 				left: 50%;
 				top: 50%;
 				-webkit-transform: translate(-50%, -50%);
@@ -408,60 +416,72 @@
 				transform: translate(-50%, -50%);
 				position: absolute;
 			}
-		}
-		.cell-button {
-			color: inherit;
-			border: none;
-			background: none;
-			display: block;
+			.cell-inner {
+				@include border;
 
-			width: 2rem;
-			height: 2rem;
+				box-sizing: content-box;
 
-			font: inherit;
-			overflow: hidden;
-			text-align: center;
-			align-items: center;
-		}
+				position: relative;
 
-		&.revealed {
-			border: none;
-			box-shadow: inset 0.1rem 0.1rem 0 #7b7b7b;
-			&.mine {
-				background-color: red;
+				width: calc($cell-size - calc($border-size * 2));
+				height: calc($cell-size - calc($border-size * 2));
+
+				.flag-container {
+					left: 50%;
+					top: 50%;
+					-webkit-transform: translate(-50%, -50%);
+					-moz-transform: translate(-50%, -50%);
+					transform: translate(-50%, -50%);
+					position: absolute;
+				}
 			}
-			// -webkit-touch-callout: none; /* iOS Safari */
-			// -webkit-user-select: none; /* Safari */
-			// -khtml-user-select: none; /* Konqueror HTML */
-			// -moz-user-select: none; /* Old versions of Firefox */
-			// -ms-user-select: none; /* Internet Explorer/Edge */
-			// user-select: none; /* Non-prefixed version, currently supported by Chrome, Edge, Opera and Firefox */
-			&[data-value="0"] {
-				font-size: 0;
+
+			.cell-button {
+				color: inherit;
+				border: none;
+				background: none;
+				display: block;
+
+				width: $cell-size;
+				height: $cell-size;
+
+				font: inherit;
+				overflow: hidden;
+				text-align: center;
+				align-items: center;
 			}
-			&[data-value="1"] {
-				color: blue;
-			}
-			&[data-value="2"] {
-				color: green;
-			}
-			&[data-value="3"] {
-				color: red;
-			}
-			&[data-value="4"] {
-				color: darkblue;
-			}
-			&[data-value="5"] {
-				color: darkred;
-			}
-			&[data-value="6"] {
-				color: teal;
-			}
-			&[data-value="7"] {
-				color: black;
-			}
-			&[data-value="8"] {
-				color: gray;
+
+			&.revealed {
+				border: none;
+				box-shadow: inset calc($cell-size / 20) calc($cell-size / 20) 0 #7b7b7b;
+
+				&[data-number="0"] {
+					font-size: 0;
+				}
+				&[data-number="1"] {
+					color: blue;
+				}
+				&[data-number="2"] {
+					color: green;
+				}
+				&[data-number="3"] {
+					color: red;
+				}
+				&[data-number="4"] {
+					color: darkblue;
+				}
+				&[data-number="5"] {
+					color: darkred;
+				}
+				&[data-number="6"] {
+					color: teal;
+				}
+				&[data-number="7"] {
+					color: black;
+				}
+				&[data-number="8"] {
+					color: gray;
+				}
 			}
 		}
 	}
