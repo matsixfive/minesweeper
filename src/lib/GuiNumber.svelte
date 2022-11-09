@@ -20,7 +20,7 @@
 	table {
 		// width:100px;
 		font-family: "sevensegment";
-		font-size: 2rem;
+		font-size: 1.4rem;
 		color: red;
 		table-layout: fixed;
 		column-gap: 0;
