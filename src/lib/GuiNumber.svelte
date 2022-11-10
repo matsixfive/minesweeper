@@ -13,19 +13,31 @@
 <style lang="scss">
 	@font-face {
 		font-family: "sevensegment";
-		src: url("/digits.ttf");
+		src: url("/lcd.ttf");
 		// src: url("/7segment.ttf");
 	}
 
 	table {
 		// width:100px;
 		font-family: "sevensegment";
-		font-size: 1.4rem;
+		font-weight: 900;
+		font-size: 1.75rem;
+
 		color: red;
+		background-color: black;
+
+		overflow: hidden;
 		table-layout: fixed;
 		column-gap: 0;
 		border-spacing: 0;
-		background-color: black;
+
+		$border-tl: #ffffff;
+		$border-br: #808080;
+
+		border: 0.07rem solid;
+		border-color:  $border-br $border-tl $border-tl $border-br;
+
+		padding: 0 0.2rem;
 	}
 	td {
 		width: 1ch;

@@ -1,5 +1,6 @@
 <script lang="ts">
-	import Board from "./lib/Board.svelte";
+	// import Board from "./lib/Board.svelte";
+	import BoardClass from "./lib/Board.svelte";
 
 	let unique = [{}]; // every {} is unique, {} === {} evaluates to false
 
@@ -10,9 +11,6 @@
 
 <main>
 	{#each unique as key (key)}
-		<Board restart={() => restart()} />
+		<BoardClass {restart} />
 	{/each}
 </main>
-
-<style>
-</style>

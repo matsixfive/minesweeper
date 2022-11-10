@@ -1,8 +1,8 @@
 <script lang="ts">
 	import FlagIcon from "../FlagIcon.svelte";
-	import type { Cell } from "./boardGen";
-	import boardGen from "./boardGen";
-	import MinesLeft from "./GuiNumber.svelte";
+	import type { Cell } from "./boardGenClass";
+	import boardGen from "./boardGenClass";
+	import GuiNumber from "./GuiNumber.svelte";
 
 	export let restart: () => void;
 
@@ -11,31 +11,39 @@
 	export let mines = 10;
 
 	let grid: Cell[][] = boardGen(width, height, 0);
+	console.log(grid)
 	let lost = false;
 	let won = false;
 
 	let flags = 0;
 	let nonFlags = width * height;
 
+	let startTime;
 	let timer = 0;
+	let accurateTime;
 	let timerInterval: NodeJS.Timer;
 	const startTimer = () => {
-		timerInterval = setInterval(() => timer++, 1000);
+		startTime = Date.now();
+		// timerInterval = setInterval(() => timer++, 1000);
+
+		timerInterval = setInterval(() => {
+			const delta = Date.now() - startTime;
+			timer = Math.floor(delta / 1000);
+		}, 100); // update about every second
 	};
 
 	const stopTimer = () => {
+		accurateTime = Date.now() - startTime;
 		clearInterval(timerInterval);
 	};
 
 	const win = () => {
 		won = true;
-		// alert("win!");
 		stopTimer();
 	};
 
 	const lose = () => {
 		lost = true;
-		// alert("you lose");
 		stopTimer();
 	};
 
@@ -58,9 +66,12 @@
 		let flagAmt = 0;
 		for (let j = 0; j < height; j++) {
 			for (let i = 0; i < width; i++) {
-				const { flagged, revealed } = grid[j][i];
+				const cell = grid[j][i];
+				const flagged = cell.isFlagged;
+				const revealed = cell.isRevealed;
+
 				if (!flagged && !revealed) {
-					flag(i, j);
+					cell.flag();
 					flagAmt++;
 				}
 			}
@@ -72,8 +83,8 @@
 	};
 
 	const reveal = (x: number, y: number) => {
-		if (!grid[y][x].flagged && !grid[y][x].revealed) {
-			grid[y][x].revealed = true;
+		if (!grid[y][x].isFlagged && !grid[y][x].isRevealed) {
+			grid[y][x].reveal();
 			nonFlags--;
 			if (grid[y][x].isMine) {
 				lose();
@@ -82,30 +93,8 @@
 		}
 	};
 
-	const flag = (x: number, y: number) => {
-		if (!(won || lost)) {
-			if (!grid[y][x].flagged) {
-				grid[y][x].flagged = true;
-				flags++;
-				nonFlags--;
-			}
-			checkForWin();
-		}
-	};
-
-	const unflag = (x: number, y: number) => {
-		if (!(won || lost)) {
-			if (grid[y][x].flagged) {
-				grid[y][x].flagged = false;
-				flags--;
-				nonFlags++;
-			}
-			checkForWin();
-		}
-	};
-
 	let clickedYet = false;
-	const handleCellClick = (x, y) => {
+	const handleCellClick = ({ x, y }: { x: number; y: number }) => {
 		if (!lost) {
 			if (!clickedYet) {
 				clickedYet = true;
@@ -118,7 +107,7 @@
 			}
 
 			// do nothing if cell is flagged
-			if (grid[y][x].flagged) {
+			if (grid[y][x].isFlagged) {
 				console.log("message");
 				return;
 			}
@@ -143,7 +132,7 @@
 						)
 							continue;
 
-						if (grid[y + p][x + q].flagged) {
+						if (grid[y + p][x + q].isFlagged) {
 							numFlags++;
 						}
 					}
@@ -164,7 +153,10 @@
 							)
 								continue;
 
-							if (!grid[y + p][x + q].flagged && !grid[y + p][x + q].revealed) {
+							if (
+								!grid[y + p][x + q].isFlagged &&
+								!grid[y + p][x + q].isRevealed
+							) {
 								reveal(x + q, y + p);
 
 								if (grid[y + p][x + q].isMine) {
@@ -185,7 +177,7 @@
 					for (let i = 0; i < width; i++) {
 						if (
 							grid[j][i].number === 0 &&
-							grid[j][i].revealed &&
+							grid[j][i].isRevealed &&
 							!grid[j][i].isMine
 						) {
 							for (let q = -1; q <= 1; q++) {
@@ -203,8 +195,8 @@
 										continue;
 
 									if (
-										!grid[j + q][i + p].flagged &&
-										!grid[j + q][i + p].revealed
+										!grid[j + q][i + p].isFlagged &&
+										!grid[j + q][i + p].isRevealed
 									) {
 										reveal(i + p, j + q);
 										c++;
@@ -239,7 +231,7 @@
 	<link rel="preload" href="/mine.png" as="image" crossorigin="anonymous" />
 
 	{#if lost}
-		<link rel="icon" type="image/x-icon" href="/favicon-mine.ico" />{:else}
+		<link rel="icon" type="image/x-icon" href="https://convertico.com/favicon.ico" />{:else}
 		<link rel="icon" type="image/x-icon" href="/favicon.ico" />
 	{/if}
 </svelte:head>
@@ -255,12 +247,14 @@
 	<div>
 		<header class="header">
 			<h1>
-				<MinesLeft number={mines - flags} />
+				<GuiNumber number={mines - flags} />
 			</h1>
 			<button class="smiley" on:mouseup={() => restart()}
 				>{won ? "😎" : lost ? "😵" : "🙂"}</button
 			>
-			<h1><MinesLeft number={timer} /></h1>
+			<h1 id="hi" title={(accurateTime / 1000).toString()}>
+				<GuiNumber number={timer} />
+			</h1>
 		</header>
 
 		<!-- 
@@ -277,7 +271,7 @@
 				<tr>
 					<!-- loop through cells in each row -->
 					{#each row as cell}
-						{#if cell.revealed}
+						{#if cell.isRevealed}
 							<td
 								class={`cell revealed${cell.isMine ? " mine" : ""}`}
 								data-number={cell.number}
@@ -291,7 +285,7 @@
 										class="cell-button"
 										on:mouseup={(e) => {
 											if (e.button === 0) {
-												if (!cell.flagged) handleCellClick(cell.x, cell.y);
+												if (!cell.isFlagged) handleCellClick(cell.coords);
 											}
 										}}
 									>
@@ -307,7 +301,7 @@
 								{/if}
 							</td>
 						{:else}
-							<td class={"cell".concat(cell.flagged ? " flagged" : "")}>
+							<td class={"cell".concat(cell.isFlagged ? " flagged" : "")}>
 								<button
 									class="cell-button"
 									on:mouseup={(e) => {
@@ -315,20 +309,21 @@
 
 										// left click
 										if (e.button === 0) {
-											if (!cell.flagged) handleCellClick(cell.x, cell.y);
+											if (!cell.isFlagged) handleCellClick(cell.coords);
 										}
 										// right click
 										else if (e.button === 2) {
 											// flag / unflag
-											if (grid[cell.y][cell.x].flagged) {
-												unflag(cell.x, cell.y);
+											if (cell.isFlagged) {
+												cell.unflag();
 											} else {
-												flag(cell.x, cell.y);
+												cell.flag();
 											}
+											checkForWin();
 										}
 									}}
 									><div class="cell-inner">
-										{#if cell.flagged}
+										{#if cell.isFlagged}
 											<div class="flag-container">
 												<FlagIcon class="cell-inner" />
 											</div>
