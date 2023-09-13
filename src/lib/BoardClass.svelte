@@ -6,9 +6,9 @@
 
 	export let restart: () => void;
 
-	export let width = 9;
-	export let height = 9;
-	export let mines = 10;
+	export let width = 30;
+	export let height =16;
+	export let mines = 99;
 
 	let grid: Cell[][] = boardGen(width, height, 0);
 	console.log(grid)
