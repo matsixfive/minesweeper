@@ -236,7 +236,7 @@
 		as="font"
 		crossorigin="anonymous"
 	/>
-	<link rel="preload" href="/mine.png" as="image" crossorigin="anonymous" />
+	<link rel="preload" href="/mine.png" as="image" mode="same-origin" />
 
 	{#if lost}
 		<link rel="icon" type="image/x-icon" href="/favicon-mine.ico" />{:else}
