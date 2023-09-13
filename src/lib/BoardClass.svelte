@@ -7,7 +7,7 @@
 	export let restart: () => void;
 
 	export let width = 30;
-	export let height =16;
+	export let height= 16;
 	export let mines = 99;
 
 	let grid: Cell[][] = boardGen(width, height, 0);
